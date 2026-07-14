@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bench Assistant — PC Repair Checklist</title>
+<style>
+  :root {
+    --bg:        #0d0d0d;
+    --surface:   #161616;
+    --surface2:  #1f1f1f;
+    --border:    #2a2a2a;
+    --amber:     #f59e0b;
+    --amber-dim: #92610a;
+    --green:     #22c55e;
+    --text:      #e2e2e2;
+    --text-dim:  #6b7280;
+    --mono:      'Courier New', Courier, monospace;
+    --sans:      system-ui, -apple-system, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    padding: 1rem;
+  }
+
+  /* ── Header ── */
+  header {
+    border-bottom: 1px solid var(--amber-dim);
+    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: .5rem;
+  }
+
+  h1 {
+    font-family: var(--mono);
+    font-size: 1.1rem;
+    color: var(--amber);
+    letter-spacing: .05em;
+  }
+
+  h1 span { color: var(--text-dim); font-weight: normal; }
+
+  .header-meta {
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+    margin-top: .75rem;
+    align-items: flex-end;
+  }
+
+  .meta-field {
+    display: flex;
+    flex-direction: column;
+    gap: .25rem;
+  }
+
+  .meta-field label {
+    font-size: .65rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--text-dim);
+    font-family: var(--mono);
+  }
+
+  .meta-field input, .meta-field textarea {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: .8rem;
+    padding: .35rem .5rem;
+    border-radius: 3px;
+    outline: none;
+  }
+
+  .meta-field input { width: 200px; }
+  .meta-field textarea { width: 300px; height: 2.4rem; resize: none; }
+
+  .meta-field input:focus, .meta-field textarea:focus {
+    border-color: var(--amber-dim);
+  }
+
+  /* ── Buttons ── */
+  .btn {
+    font-family: var(--mono);
+    font-size: .75rem;
+    padding: .4rem .9rem;
+    border-radius: 3px;
+    border: 1px solid;
+    cursor: pointer;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    transition: background .15s;
+  }
+
+  .btn-amber {
+    background: transparent;
+    border-color: var(--amber);
+    color: var(--amber);
+  }
+  .btn-amber:hover { background: var(--amber); color: var(--bg); }
+
+  .btn-ghost {
+    background: transparent;
+    border-color: var(--border);
+    color: var(--text-dim);
+  }
+  .btn-ghost:hover { border-color: var(--text-dim); color: var(--text); }
+
+  .btn-danger {
+    background: transparent;
+    border-color: #7f1d1d;
+    color: #f87171;
+  }
+  .btn-danger:hover { background: #7f1d1d; color: #fff; }
+
+  /* ── Progress bar ── */
+  .progress-wrap {
+    margin: 1rem 0 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+  }
+
+  .progress-bar {
+    flex: 1;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--amber);
+    border-radius: 2px;
+    transition: width .3s ease;
+  }
+
+  .progress-label {
+    font-family: var(--mono);
+    font-size: .7rem;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+
+  /* ── Tiers ── */
+  .tier {
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    margin-bottom: .75rem;
+    overflow: hidden;
+  }
+
+  .tier.active { border-color: var(--amber-dim); }
+  .tier.complete { border-color: #14532d; }
+
+  .tier-header {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .75rem 1rem;
+    background: var(--surface);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .tier.active .tier-header { background: #1a1500; }
+  .tier.complete .tier-header { background: #0a1f0e; }
+
+  .tier-number {
+    font-family: var(--mono);
+    font-size: .65rem;
+    color: var(--text-dim);
+    background: var(--surface2);
+    padding: .2rem .45rem;
+    border-radius: 2px;
+    border: 1px solid var(--border);
+  }
+
+  .tier.active .tier-number { color: var(--amber); border-color: var(--amber-dim); }
+  .tier.complete .tier-number { color: var(--green); border-color: #14532d; }
+
+  .tier-title {
+    font-size: .85rem;
+    font-weight: 600;
+    letter-spacing: .02em;
+    flex: 1;
+  }
+
+  .tier-stats {
+    font-family: var(--mono);
+    font-size: .7rem;
+    color: var(--text-dim);
+  }
+
+  .tier-chevron {
+    color: var(--text-dim);
+    font-size: .75rem;
+    transition: transform .2s;
+  }
+
+  .tier.open .tier-chevron { transform: rotate(90deg); }
+
+  .tier-body {
+    display: none;
+    padding: .5rem 1rem 1rem;
+    background: var(--surface);
+  }
+
+  .tier.open .tier-body { display: block; }
+
+  /* ── Check items ── */
+  .check-item {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: .5rem .75rem;
+    align-items: start;
+    padding: .5rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .check-item:last-child { border-bottom: none; }
+
+  .check-item input[type="checkbox"] {
+    margin-top: .2rem;
+    width: 15px;
+    height: 15px;
+    accent-color: var(--amber);
+    cursor: pointer;
+  }
+
+  .item-content { display: flex; flex-direction: column; gap: .3rem; }
+
+  .item-label {
+    font-size: .82rem;
+    line-height: 1.4;
+    cursor: pointer;
+  }
+
+  .check-item.checked .item-label {
+    color: var(--text-dim);
+    text-decoration: line-through;
+  }
+
+  .item-note {
+    font-family: var(--mono);
+    font-size: .72rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: .3rem .5rem;
+    border-radius: 2px;
+    resize: vertical;
+    min-height: 1.8rem;
+    outline: none;
+    display: none;
+    width: 100%;
+  }
+
+  .item-note:focus { border-color: var(--amber-dim); }
+  .item-note.visible { display: block; }
+
+  .item-note-toggle {
+    font-family: var(--mono);
+    font-size: .65rem;
+    color: var(--text-dim);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+    text-align: left;
+  }
+
+  .item-note-toggle:hover { color: var(--amber); }
+
+  /* ── Session Log ── */
+  .session-log-section {
+    margin-top: 2rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .log-header {
+    background: var(--surface);
+    padding: .75rem 1rem;
+    font-family: var(--mono);
+    font-size: .8rem;
+    color: var(--amber);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .log-body {
+    padding: .75rem 1rem;
+    background: var(--surface);
+  }
+
+  .log-entry {
+    display: flex;
+    gap: .75rem;
+    padding: .4rem 0;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: .72rem;
+  }
+
+  .log-entry:last-child { border-bottom: none; }
+  .log-time { color: var(--amber-dim); white-space: nowrap; }
+  .log-text { color: var(--text); }
+
+  /* ── Footer actions ── */
+  .footer-actions {
+    display: flex;
+    gap: .75rem;
+    margin-top: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  /* ── History panel ── */
+  .history-panel {
+    margin-top: 2rem;
+    display: none;
+  }
+
+  .history-panel.visible { display: block; }
+
+  .history-panel h2 {
+    font-family: var(--mono);
+    font-size: .8rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-bottom: .75rem;
+  }
+
+  .history-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: .6rem .9rem;
+    margin-bottom: .5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .history-item-info { font-family: var(--mono); font-size: .75rem; }
+  .history-item-device { color: var(--text); }
+  .history-item-date { color: var(--text-dim); font-size: .65rem; margin-top: .2rem; }
+
+  /* ── Responsive ── */
+  @media (max-width: 600px) {
+    .meta-field input, .meta-field textarea { width: 100%; }
+    .header-meta { flex-direction: column; }
+    .footer-actions { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <h1>BENCH ASSISTANT <span>// PC Repair Checklist</span></h1>
+    <div style="display:flex;gap:.5rem;">
+      <button class="btn btn-ghost" onclick="toggleHistory()">Sessions</button>
+      <button class="btn btn-danger" onclick="newSession()">New Session</button>
+    </div>
+  </div>
+
+  <div class="header-meta">
+    <div class="meta-field">
+      <label>Device / Model</label>
+      <input type="text" id="deviceName" placeholder="e.g. ASUS ROG B550-F, custom build" oninput="saveSession()">
+    </div>
+    <div class="meta-field">
+      <label>Date</label>
+      <input type="text" id="sessionDate" readonly>
+    </div>
+    <div class="meta-field">
+      <label>Chief Complaint</label>
+      <textarea id="complaint" placeholder="Describe symptoms as reported..." oninput="saveSession()"></textarea>
+    </div>
+  </div>
+</header>
+
+<div class="progress-wrap">
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="progress-label" id="progressLabel">0 / 0 complete</div>
+</div>
+
+<div id="tierContainer"></div>
+
+<div class="session-log-section">
+  <div class="log-header">
+    <span>SESSION LOG</span>
+    <button class="btn btn-ghost" style="padding:.25rem .6rem;font-size:.65rem;" onclick="clearLog()">Clear</button>
+  </div>
+  <div class="log-body" id="logBody">
+    <div class="log-entry"><span class="log-time">--:--:--</span><span class="log-text" style="color:var(--text-dim)">Session log will appear here as you work through the checklist.</span></div>
+  </div>
+</div>
+
+<div class="footer-actions">
+  <button class="btn btn-amber" onclick="exportSession()">Export Session (.txt)</button>
+  <button class="btn btn-ghost" onclick="exportJSON()">Export JSON</button>
+</div>
+
+<div class="history-panel" id="historyPanel">
+  <h2>Recent Sessions</h2>
+  <div id="historyList"></div>
+</div>
+
+<script>
+// ── Checklist Data ────────────────────────────────────────────────
+const TIERS = [
+  {
+    id: 'intake',
+    title: 'Tier 1 — Intake',
+    items: [
+      'Client / owner description of problem: symptom, onset, precipitating event',
+      'Visual inspection: physical damage, cracks, bent pins, missing components',
+      'Burn marks or scorching on board, cables, or connectors',
+      'Bulging, leaking, or discolored capacitors',
+      'Smell test: ozone, burnt plastic, electrical burning',
+      'Prior repair history documented',
+      'Photo documentation taken (full board + problem areas)',
+    ]
+  },
+  {
+    id: 'no_post',
+    title: 'Tier 2 — No-POST Triage',
+    items: [
+      'Reduced to minimal boot config: 1 RAM stick, no GPU, no storage',
+      'Breadboard test: board removed from case, on non-conductive surface',
+      'Internal speaker / POST buzzer connected and audible',
+      'POST codes or beep codes documented',
+      'Diagnostic LED codes documented (if motherboard has Q-LED/Dr. Debug)',
+      'Front panel header (PWR_SW, RST_SW) verified or bypassed with screwdriver short',
+      'Boot attempted with known-good PSU',
+    ]
+  },
+  {
+    id: 'power',
+    title: 'Tier 3 — Power Delivery',
+    items: [
+      'PSU standalone test (paperclip/jumper across PS_ON and GND on 24-pin)',
+      'PSU fan spins under standalone test',
+      'ATX 24-pin connector fully seated (audible click)',
+      'CPU EPS 4-pin or 8-pin connector connected and seated',
+      '12V rail measured at Molex/ATX connector (target: 11.4–12.6V)',
+      '5V rail measured (target: 4.75–5.25V)',
+      '3.3V rail measured (target: 3.135–3.465V)',
+      'VRM area inspected: inductors, capacitors, mosfets — no damage visible',
+      'PCIe power connectors verified (if GPU present)',
+    ]
+  },
+  {
+    id: 'isolation',
+    title: 'Tier 4 — Component Isolation',
+    items: [
+      'Each RAM stick tested individually in slot A2 (primary single-channel slot)',
+      'All RAM slots tested with known-good stick',
+      'GPU removed; tested with integrated graphics if available',
+      'All storage (SATA + NVMe) disconnected',
+      'All PCIe expansion cards removed',
+      'All USB devices and non-essential peripherals disconnected',
+      'CMOS cleared via jumper (leave bridged 10 sec, restore)',
+      'CMOS battery removed for 5+ minutes if jumper unavailable',
+      'Known-good CPU tested (if available and socket matches)',
+    ]
+  },
+  {
+    id: 'board_level',
+    title: 'Tier 5 — Board-Level Diagnostics',
+    items: [
+      'Capacitors tested with ESR meter (acceptable ESR varies by capacitance)',
+      'Suspected shorted capacitors identified with continuity/diode mode',
+      'Short-circuit detection: current-limited bench PSU or USB power meter on rails',
+      'Voltage rails probed at test points or via multimeter on key pins',
+      'Clock signal confirmed present (oscilloscope on clock gen output if available)',
+      'BIOS chip identified: package type (SOP-8 / WSON-8), manufacturer, part number',
+      'BIOS chip read and backup created (CH341A or equivalent programmer)',
+      'BIOS reflash attempted with known-good image',
+      'Trace inspection under magnification: cold joints, lifted pads, cracked traces',
+      'Reflow suspected joints (hot air station)',
+    ]
+  }
+];
+
+// ── State ─────────────────────────────────────────────────────────
+let state = {
+  id: generateId(),
+  date: todayStr(),
+  device: '',
+  complaint: '',
+  checks: {},   // { tierId_itemIndex: { checked: bool, note: '' } }
+  log: [],
+  openTiers: { intake: true }
+};
+
+function generateId() {
+  return 'sess_' + Date.now();
+}
+
+function todayStr() {
+  return new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function timeStr() {
+  return new Date().toLocaleTimeString('en-US', { hour12: false });
+}
+
+// ── Render ────────────────────────────────────────────────────────
+function render() {
+  const container = document.getElementById('tierContainer');
+  container.innerHTML = '';
+
+  let totalItems = 0, checkedItems = 0;
+
+  TIERS.forEach(tier => {
+    const tierChecks = tier.items.map((_, i) => state.checks[`${tier.id}_${i}`] || { checked: false, note: '' });
+    const tierTotal = tier.items.length;
+    const tierDone = tierChecks.filter(c => c.checked).length;
+    totalItems += tierTotal;
+    checkedItems += tierDone;
+
+    const isOpen = !!state.openTiers[tier.id];
+    const isComplete = tierDone === tierTotal;
+    const isActive = !isComplete && tierDone > 0;
+
+    const tierEl = document.createElement('div');
+    tierEl.className = `tier${isOpen ? ' open' : ''}${isComplete ? ' complete' : ''}${isActive ? ' active' : ''}`;
+
+    const numLabel = tier.id === 'intake' ? 'T1' : tier.id === 'no_post' ? 'T2' : tier.id === 'power' ? 'T3' : tier.id === 'isolation' ? 'T4' : 'T5';
+
+    tierEl.innerHTML = `
+      <div class="tier-header" onclick="toggleTier('${tier.id}')">
+        <span class="tier-number">${numLabel}</span>
+        <span class="tier-title">${tier.title}</span>
+        <span class="tier-stats">${tierDone}/${tierTotal}</span>
+        <span class="tier-chevron">▶</span>
+      </div>
+      <div class="tier-body" id="body_${tier.id}"></div>
+    `;
+
+    container.appendChild(tierEl);
+
+    const body = tierEl.querySelector('.tier-body');
+    tier.items.forEach((label, i) => {
+      const key = `${tier.id}_${i}`;
+      const c = tierChecks[i];
+      const itemEl = document.createElement('div');
+      itemEl.className = `check-item${c.checked ? ' checked' : ''}`;
+      itemEl.id = `item_${key}`;
+
+      itemEl.innerHTML = `
+        <input type="checkbox" id="chk_${key}" ${c.checked ? 'checked' : ''} onchange="toggleCheck('${key}', this.checked)">
+        <div class="item-content">
+          <label class="item-label" for="chk_${key}">${label}</label>
+          <button class="item-note-toggle" onclick="toggleNote('${key}')">+ note</button>
+          <textarea class="item-note${c.note ? ' visible' : ''}" id="note_${key}" placeholder="Finding / measurement / observation…" oninput="saveNote('${key}', this.value)">${c.note || ''}</textarea>
+        </div>
+      `;
+
+      body.appendChild(itemEl);
+    });
+  });
+
+  // Progress
+  const pct = totalItems ? Math.round((checkedItems / totalItems) * 100) : 0;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = `${checkedItems} / ${totalItems} complete`;
+}
+
+function renderLog() {
+  const body = document.getElementById('logBody');
+  if (!state.log.length) {
+    body.innerHTML = '<div class="log-entry"><span class="log-time">--:--:--</span><span class="log-text" style="color:var(--text-dim)">No entries yet.</span></div>';
+    return;
+  }
+  body.innerHTML = state.log.slice().reverse().map(e =>
+    `<div class="log-entry"><span class="log-time">${e.time}</span><span class="log-text">${e.text}</span></div>`
+  ).join('');
+}
+
+// ── Actions ───────────────────────────────────────────────────────
+function toggleTier(id) {
+  state.openTiers[id] = !state.openTiers[id];
+  render();
+}
+
+function toggleCheck(key, checked) {
+  if (!state.checks[key]) state.checks[key] = { checked: false, note: '' };
+  state.checks[key].checked = checked;
+
+  const [tierId, idx] = key.split('_');
+  const tier = TIERS.find(t => t.id === tierId);
+  const label = tier ? tier.items[parseInt(idx)] : key;
+  const shortLabel = label.length > 60 ? label.slice(0, 60) + '…' : label;
+
+  addLog(checked ? `✓ ${shortLabel}` : `○ Unchecked: ${shortLabel}`);
+  saveSession();
+  render();
+}
+
+function toggleNote(key) {
+  const note = document.getElementById(`note_${key}`);
+  note.classList.toggle('visible');
+  if (note.classList.contains('visible')) note.focus();
+}
+
+function saveNote(key, value) {
+  if (!state.checks[key]) state.checks[key] = { checked: false, note: '' };
+  state.checks[key].note = value;
+  saveSession();
+}
+
+function addLog(text) {
+  state.log.push({ time: timeStr(), text });
+  renderLog();
+}
+
+function clearLog() {
+  state.log = [];
+  renderLog();
+  saveSession();
+}
+
+// ── Session management ────────────────────────────────────────────
+function saveSession() {
+  state.device = document.getElementById('deviceName').value;
+  state.complaint = document.getElementById('complaint').value;
+  localStorage.setItem('currentSession', JSON.stringify(state));
+
+  // Save to history
+  const history = getHistory();
+  const existing = history.findIndex(s => s.id === state.id);
+  const snapshot = { id: state.id, date: state.date, device: state.device, complaint: state.complaint };
+  if (existing >= 0) history[existing] = snapshot;
+  else history.unshift(snapshot);
+  localStorage.setItem('sessionHistory', JSON.stringify(history.slice(0, 10)));
+}
+
+function loadSession() {
+  const saved = localStorage.getItem('currentSession');
+  if (saved) {
+    try { state = JSON.parse(saved); } catch(e) {}
+  }
+  document.getElementById('deviceName').value = state.device || '';
+  document.getElementById('complaint').value = state.complaint || '';
+  document.getElementById('sessionDate').value = state.date || todayStr();
+}
+
+function newSession() {
+  if (!confirm('Start a new session? Current session will be saved in history.')) return;
+  saveSession();
+  state = {
+    id: generateId(),
+    date: todayStr(),
+    device: '',
+    complaint: '',
+    checks: {},
+    log: [],
+    openTiers: { intake: true }
+  };
+  document.getElementById('deviceName').value = '';
+  document.getElementById('complaint').value = '';
+  document.getElementById('sessionDate').value = state.date;
+  addLog('New session started.');
+  render();
+  renderLog();
+}
+
+function getHistory() {
+  try { return JSON.parse(localStorage.getItem('sessionHistory')) || []; }
+  catch(e) { return []; }
+}
+
+function toggleHistory() {
+  const panel = document.getElementById('historyPanel');
+  panel.classList.toggle('visible');
+  if (panel.classList.contains('visible')) renderHistory();
+}
+
+function renderHistory() {
+  const history = getHistory();
+  const list = document.getElementById('historyList');
+  if (!history.length) {
+    list.innerHTML = '<div style="font-family:var(--mono);font-size:.75rem;color:var(--text-dim);padding:.5rem 0">No saved sessions yet.</div>';
+    return;
+  }
+  list.innerHTML = history.map(s => `
+    <div class="history-item">
+      <div class="history-item-info">
+        <div class="history-item-device">${s.device || '(no device name)'}</div>
+        <div class="history-item-date">${s.date} · ${(s.complaint || '').slice(0, 60) || 'No complaint recorded'}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── Export ────────────────────────────────────────────────────────
+function exportSession() {
+  let out = '';
+  out += '='.repeat(60) + '\n';
+  out += 'PC REPAIR SESSION REPORT\n';
+  out += '='.repeat(60) + '\n';
+  out += `Device:    ${state.device || '(not specified)'}\n`;
+  out += `Date:      ${state.date}\n`;
+  out += `Complaint: ${state.complaint || '(none recorded)'}\n\n`;
+
+  TIERS.forEach(tier => {
+    out += '-'.repeat(40) + '\n';
+    out += tier.title.toUpperCase() + '\n';
+    out += '-'.repeat(40) + '\n';
+    tier.items.forEach((label, i) => {
+      const key = `${tier.id}_${i}`;
+      const c = state.checks[key] || { checked: false, note: '' };
+      out += `[${c.checked ? 'X' : ' '}] ${label}\n`;
+      if (c.note) out += `    NOTE: ${c.note}\n`;
+    });
+    out += '\n';
+  });
+
+  if (state.log.length) {
+    out += '='.repeat(60) + '\n';
+    out += 'SESSION LOG\n';
+    out += '='.repeat(60) + '\n';
+    state.log.forEach(e => { out += `${e.time}  ${e.text}\n`; });
+  }
+
+  download(`repair_${(state.device || 'session').replace(/\s+/g,'_')}_${state.date.replace(/\s+/g,'_')}.txt`, out);
+}
+
+function exportJSON() {
+  download(`repair_${state.id}.json`, JSON.stringify(state, null, 2));
+}
+
+function download(filename, content) {
+  const a = document.createElement('a');
+  a.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(content);
+  a.download = filename;
+  a.click();
+}
+
+// ── Init ──────────────────────────────────────────────────────────
+loadSession();
+document.getElementById('sessionDate').value = state.date;
+addLog('Session loaded.');
+render();
+renderLog();
+</script>
+</body>
+</html>
