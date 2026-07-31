@@ -109,3 +109,19 @@ Keep responses concise. The technician has their hands on hardware.
 ---
 
 *Last updated: 2026-07-14 — Session 0 (Setup)*
+
+
+## Commit & Push -- Master Watcher (added 2026-07-30)
+
+Auto commit + push for this repo is handled by the **Master Projects Watcher**
+(`C:\\Projects\\_watcher\\master-watch.ps1`, launched at logon), which watches every
+git repo under `C:\\Projects`. The old per-repo watchers are retired.
+
+- On save, after ~8s of quiet: `git add -A` -> `git commit -m "auto: <timestamp>"` -> `git push`.
+- One shared tray icon; this repo shows its own colored/lettered icon + a repo-named
+  toast on each push. Activity log: `C:\\Projects\\_watcher\\master-watch.log`.
+- Guards: skips while a manual git op is in progress (merge/rebase/lock); unstages +
+  warns on any file over 25MB (never auto-pushes large/secret blobs); recovers on buffer overflow.
+- Routine edits need no manual git. Still make intentional manual commits for milestones
+  -- the `auto:` commits are a safety net, not a substitute for real history.
+- Shared standards: this repo's root `CLAUDE.md` imports `C:\\Projects\\_shared\\Claude.md`.
